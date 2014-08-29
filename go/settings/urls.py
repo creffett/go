@@ -51,3 +51,7 @@ urlpatterns += patterns('go.views',
 urlpatterns += patterns('',
     url(r'^captcha/', include('captcha.urls')),
 )
+
+# moderation support
+from moderation.helpers import auto_discover
+auto_discover()

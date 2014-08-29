@@ -31,6 +31,19 @@ def is_registered( user ):
         return False
 
 
+def username_taken(username):
+    """
+    This function checks if a username already is taken, either in the approved
+    or pending queues.
+    """
+
+    try:
+       registered = RegisteredUser.unmoderated_objects.get(username=username)
+       return True
+    except RegisteredUser.DoesNotExist:
+       return False
+
+
 ##############################################################################
 """
 Define error page handling here.
@@ -186,25 +199,22 @@ def signup(request):
 
     """
 
-    form = SignupForm()
+    signup_form = SignupForm()
 
     if request.method == 'POST':
-        form = SignupForm( request.POST )
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            full_name = form.cleaned_data.get('full_name')
-            description = form.cleaned_data.get('description')
+        signup_form = SignupForm( request.POST )
+        if signup_form.is_valid():
+            username = signup_form.cleaned_data.get('username')
+            # Test if username is already taken
+            if username_taken(username):
+                raise forms.ValidationError('Username "%s" is already in use.' % username)
 
-            send_mail('Signup from %s' % (username), '%s signed up at %s\n'
-                'Username: %s\nMessage: %s\nPlease attend to this request at '
-                'your earliest convenience.' % (str(full_name),
-                str(timezone.now()).strip(), str(username), str(description)),
-                settings.EMAIL_FROM, [settings.EMAIL_TO])
+            signup = signup_form.save()
 
             return redirect('registered')
 
     return render(request, 'signup.html', {
-        'form': form,
+        'form': signup_form,
     },
     )
 
